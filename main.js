@@ -22,6 +22,8 @@ var adapter       = utils.adapter({
     unload: stop
 });
 
+var memwatch = require('memwatch-ng');
+
 process.on('SIGINT', stop);
 
 adapter.on('ready', function () {
@@ -1745,6 +1747,10 @@ var main = {
                 });
 
                 this.on('connection', function (client) {
+					memwatch.on('leak', function(info) {
+						var myoutput = JSON.stringify(info);
+						adapter.log.error('Leak detected: ' + myoutput);
+					});
                     var list = main.getListOfClients(that.getClients());
                     adapter.log.info('+ Clients connected: ' + list);
                     adapter.setState('info.connection', list, true);
