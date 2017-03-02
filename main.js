@@ -23,6 +23,7 @@ var adapter       = utils.adapter({
 });
 
 var memwatch = require('memwatch-ng');
+var heapDiff = null;
 
 process.on('SIGINT', stop);
 
@@ -1751,6 +1752,11 @@ var main = {
 						var myoutput = JSON.stringify(info);
 						adapter.log.error('Leak detected: ' + myoutput);
 					});
+					if (heapDiff) {
+						var diff = heapDiff.end();
+						adapter.log.error('Diff: ' + JSON.stringify(diff));
+					}
+					heapDiff = new memwatch.HeapDiff();
                     var list = main.getListOfClients(that.getClients());
                     adapter.log.info('+ Clients connected: ' + list);
                     adapter.setState('info.connection', list, true);
