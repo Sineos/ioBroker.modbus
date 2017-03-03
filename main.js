@@ -22,58 +22,59 @@ var adapter       = utils.adapter({
     unload: stop
 });
 
-var memwatch = require('memwatch-ng');
-var heapDiff = null;
-heapDiff = new memwatch.HeapDiff();
+var watchmem = false;
 
-var heapdump = require('heapdump');
-
-
-memwatch.on('leak', function(info) {  
-	var myoutput = JSON.stringify(info);
-	adapter.log.error('Leak detected: ' + myoutput);
-	heapdump.writeSnapshot('/opt/iobroker/log/' + Date.now() + '.heapsnapshot');
-});
-
-var filename = '/opt/iobroker/log/memstats'  
-var firstLine = true;
-
-memwatch.on("stats", function(stats) {
-	if (heapDiff) {
-		var diff = heapDiff.end();
-		adapter.log.error('Diff: ' + JSON.stringify(diff));
-	}
+if (watchmem) {
+	var memwatch = require('memwatch-ng');
+	var heapdump = require('heapdump');
+	var heapDiff = null;
 	heapDiff = new memwatch.HeapDiff();
-    
-	var fs = require("fs"),
-        info = [];
 
-    if(firstLine) {
-        info.push("num_full_gc");
-        info.push("num_inc_gc");
-        info.push("heap_compactions");
-        info.push("usage_trend");
-        info.push("estimated_base");
-        info.push("current_base");
-        info.push("min");
-        info.push("max");
-        fs.appendFileSync(filename, info.join(",") + "\n");
-        info = [];
-        firstLine = false;
-    }
+	memwatch.on('leak', function(info) {  
+		var myoutput = JSON.stringify(info);
+		adapter.log.error('Leak detected: ' + myoutput);
+		heapdump.writeSnapshot('/opt/iobroker/log/' + Date.now() + '.heapsnapshot');
+	});
 
-    info.push(stats["num_full_gc"]);
-    info.push(stats["num_inc_gc"]);
-    info.push(stats["heap_compactions"]);
-    info.push(stats["usage_trend"]);
-    info.push(stats["estimated_base"]);
-    info.push(stats["current_base"]);
-    info.push(stats["min"]);
-    info.push(stats["max"]);
+	var filename = '/opt/iobroker/log/memstats';
+	var firstLine = true;
 
-    fs.appendFile(filename, info.join(",") + "\n");
-});
+	memwatch.on("stats", function(stats) {
+		if (heapDiff) {
+			var diff = heapDiff.end();
+			adapter.log.error('Diff: ' + JSON.stringify(diff));
+		}
+		heapDiff = new memwatch.HeapDiff();
+		
+		var fs = require("fs"),
+			info = [];
 
+		if(firstLine) {
+			info.push("num_full_gc");
+			info.push("num_inc_gc");
+			info.push("heap_compactions");
+			info.push("usage_trend");
+			info.push("estimated_base");
+			info.push("current_base");
+			info.push("min");
+			info.push("max");
+			fs.appendFileSync(filename, info.join(",") + "\n");
+			info = [];
+			firstLine = false;
+		}
+
+		info.push(stats["num_full_gc"]);
+		info.push(stats["num_inc_gc"]);
+		info.push(stats["heap_compactions"]);
+		info.push(stats["usage_trend"]);
+		info.push(stats["estimated_base"]);
+		info.push(stats["current_base"]);
+		info.push(stats["min"]);
+		info.push(stats["max"]);
+
+		fs.appendFile(filename, info.join(",") + "\n");
+	});
+}
 
 process.on('SIGINT', stop);
 
@@ -1578,7 +1579,9 @@ var main = {
         var fs;
         var path;
         var client;
-		heapDiff = new memwatch.HeapDiff();
+		if (watchmem) {
+			heapDiff = new memwatch.HeapDiff();
+		}
 
         if (main.acp.slave) {
             var server = {
@@ -1799,15 +1802,6 @@ var main = {
                 });
 
                 this.on('connection', function (client) {
-					memwatch.on('leak', function(info) {
-						var myoutput = JSON.stringify(info);
-						adapter.log.error('Leak detected: ' + myoutput);
-						if (heapDiff) {
-							var diff = heapDiff.end();
-							adapter.log.error('Diff: ' + JSON.stringify(diff));
-						}
-						heapDiff = new memwatch.HeapDiff();
-					});
                     var list = main.getListOfClients(that.getClients());
                     adapter.log.info('+ Clients connected: ' + list);
                     adapter.setState('info.connection', list, true);
