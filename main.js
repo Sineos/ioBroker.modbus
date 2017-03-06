@@ -22,59 +22,56 @@ var adapter       = utils.adapter({
     unload: stop
 });
 
-var watchmem = false;
+// ------------------ monitor memory usage -------------
 
-if (watchmem) {
-	var memwatch = require('memwatch-ng');
-	var heapdump = require('heapdump');
-	var heapDiff = null;
+var memwatch = require('memwatch-ng');
+var heapdump = require('heapdump');
+var filename = '/opt/iobroker/log/memstats';
+var firstLine = true;
+var heapDiff = null;
+heapDiff = new memwatch.HeapDiff();
+
+memwatch.on('leak', function(info) {  
+	adapter.log.error('Leak detected: ' + JSON.stringify(info));
+	heapdump.writeSnapshot('/opt/iobroker/log/' + Date.now() + '.heapsnapshot');
+});
+
+memwatch.on("stats", function(stats) {
+	adapter.log.warn('Memwatch stats run');	
+	var diff = heapDiff.end();
+	//adapter.log.error('Diff: ' + JSON.stringify(diff));
 	heapDiff = new memwatch.HeapDiff();
 
-	memwatch.on('leak', function(info) {  
-		var myoutput = JSON.stringify(info);
-		adapter.log.error('Leak detected: ' + myoutput);
-		heapdump.writeSnapshot('/opt/iobroker/log/' + Date.now() + '.heapsnapshot');
-	});
+	var fs = require("fs"),
+		info = [];
 
-	var filename = '/opt/iobroker/log/memstats';
-	var firstLine = true;
+	if(firstLine) {
+		info.push("num_full_gc");
+		info.push("num_inc_gc");
+		info.push("heap_compactions");
+		info.push("usage_trend");
+		info.push("estimated_base");
+		info.push("current_base");
+		info.push("min");
+		info.push("max");
+		fs.appendFileSync(filename, info.join(",") + "\n");
+		info = [];
+		firstLine = false;
+	}
 
-	memwatch.on("stats", function(stats) {
-		if (heapDiff) {
-			var diff = heapDiff.end();
-			adapter.log.error('Diff: ' + JSON.stringify(diff));
-		}
-		heapDiff = new memwatch.HeapDiff();
-		
-		var fs = require("fs"),
-			info = [];
+	info.push(stats["num_full_gc"]);
+	info.push(stats["num_inc_gc"]);
+	info.push(stats["heap_compactions"]);
+	info.push(stats["usage_trend"]);
+	info.push(stats["estimated_base"]);
+	info.push(stats["current_base"]);
+	info.push(stats["min"]);
+	info.push(stats["max"]);
 
-		if(firstLine) {
-			info.push("num_full_gc");
-			info.push("num_inc_gc");
-			info.push("heap_compactions");
-			info.push("usage_trend");
-			info.push("estimated_base");
-			info.push("current_base");
-			info.push("min");
-			info.push("max");
-			fs.appendFileSync(filename, info.join(",") + "\n");
-			info = [];
-			firstLine = false;
-		}
+	fs.appendFile(filename, info.join(",") + "\n");
+});
 
-		info.push(stats["num_full_gc"]);
-		info.push(stats["num_inc_gc"]);
-		info.push(stats["heap_compactions"]);
-		info.push(stats["usage_trend"]);
-		info.push(stats["estimated_base"]);
-		info.push(stats["current_base"]);
-		info.push(stats["min"]);
-		info.push(stats["max"]);
-
-		fs.appendFile(filename, info.join(",") + "\n");
-	});
-}
+// -------------------------------------------------
 
 process.on('SIGINT', stop);
 
@@ -1579,9 +1576,6 @@ var main = {
         var fs;
         var path;
         var client;
-		if (watchmem) {
-			heapDiff = new memwatch.HeapDiff();
-		}
 
         if (main.acp.slave) {
             var server = {
