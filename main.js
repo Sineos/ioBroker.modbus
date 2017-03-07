@@ -24,7 +24,7 @@ var adapter       = utils.adapter({
 
 process.on('SIGINT', stop);
 
-adapter.on('ready', function () {
+adapter.on('ready', function iobmodbusAdapterOnReady() {
     try {
         serialport = require('serialport');
     } catch (err) {
@@ -35,14 +35,14 @@ adapter.on('ready', function () {
     main.main();
 });
 
-adapter.on('message', function (obj) {
+adapter.on('message', function iobmodbusAdapterOnMessage(obj) {
     if (obj) {
         switch (obj.command) {
             case 'listUart':
                 if (obj.callback) {
                     if (serialport) {
                         // read all found serial ports
-                        serialport.list(function (err, ports) {
+                        serialport.list(function iobmodbusListSerial(err, ports) {
                             listSerial(ports);
                             adapter.log.info('List of port: ' + JSON.stringify(ports));
                             adapter.sendTo(obj.from, obj.command, ports, obj.callback);
@@ -95,12 +95,12 @@ var objects    = {};
 var enums      = {};
 var infoRegExp = new RegExp(adapter.namespace.replace('.', '\\.') + '\\.info\\.');
 
-adapter.on('stateChange', function (id, state) {
+adapter.on('stateChange', function iobmodbusApadterOnStateChange(id, state) {
     if (state && !state.ack && id && !infoRegExp.test(id)) {
         if (objects[id]) {
             prepareWrite(id, state);
         } else {
-            adapter.getObject(id, function (err, data) {
+            adapter.getObject(id, function iobmodbusApadterOnStateChange(err, data) {
                 if (!err) {
                     objects[id] = data;
                     prepareWrite(id, state);
@@ -131,11 +131,11 @@ function listSerial(ports) {
     try {
         result = fs
             .readdirSync(devDirName)
-            .map(function (file) {
+            .map(function iombodbusListSerial(file) {
                 return pathMod.join(devDirName, file);
             })
             .filter(filterSerialPorts)
-            .map(function (port) {
+            .map(function iombodbusListSerial(port) {
                 var found = false;
                 for (var v = 0; v < ports.length; v++) {
                     if (ports[v].comName === port) {
@@ -233,9 +233,9 @@ function prepareWrite(id, state) {
 
             if (!objects[id].native.wp) {
                 writeHelper(id, state);
-                setTimeout(function () {
+                setTimeout(function iombodbusACPSlaveTO1() {
                     var _id = id.substring(adapter.namespace.length + 1);
-                    adapter.setState(id, ackObjects[_id] ? ackObjects[_id].val : null, true, function (err) {
+                    adapter.setState(id, ackObjects[_id] ? ackObjects[_id].val : null, true, function iombodbusACPSlaveTO1(err) {
                         // analyse if the state could be set (because of permissions)
                         if (err) adapter.log.error('Can not set state ' + id + ': ' + err);
                     });
@@ -246,12 +246,12 @@ function prepareWrite(id, state) {
                     var _id = id.substring(adapter.namespace.length + 1);
                     pulseList[id] = ackObjects[_id] ? ackObjects[_id].val : !state.val;
 
-                    setTimeout(function () {
+                    setTimeout(function iombodbusACPSlaveTO2() {
                         writeHelper(id, {val: pulseList[id]});
 
-                        setTimeout(function () {
+                        setTimeout(function iombodbusACPSlaveTO3() {
                             if (ackObjects[_id]) {
-                                adapter.setState(id, ackObjects[_id].val, true, function (err) {
+                                adapter.setState(id, ackObjects[_id].val, true, function iombodbusACPSlaveTO3(err) {
                                     // analyse if the state could be set (because of permissions)
                                     if (err) adapter.log.error('Can not set state ' + id + ': ' + err);
                                 });
@@ -265,9 +265,9 @@ function prepareWrite(id, state) {
                 }
             }
         } else {
-            setTimeout(function () {
+            setTimeout(function iombodbusACPSlaveTO4() {
                 var _id = id.substring(adapter.namespace.length + 1);
-                adapter.setState(id, ackObjects[_id] ? ackObjects[_id].val : null, true, function (err) {
+                adapter.setState(id, ackObjects[_id] ? ackObjects[_id].val : null, true, function iombodbusACPSlaveTO4(err) {
                     // analyse if the state could be set (because of permissions)
                     if (err) adapter.log.error('Can not set state ' + id + ': ' + err);
                 });
@@ -296,9 +296,9 @@ function send() {
         if (val === 'false' || val === false) val = 0;
         val = parseFloat(val);
 
-        modbusClient.writeSingleCoil(objects[id].native.address, !!val).then(function (response) {
+        modbusClient.writeSingleCoil(objects[id].native.address, !!val).then(function iombodbusWriteSingleCoil(response) {
             adapter.log.debug('Write successfully [' + objects[id].native.address + ']: ' + val);
-        }).fail(function (err) {
+        }).fail(function iombodbusWriteSingleCoil(err) {
             adapter.log.error('Cannot write [' + objects[id].native.address + ']: ' + JSON.stringify(err));
             // still keep on communication
             if (!isStop) main.reconnect(true);
@@ -318,9 +318,9 @@ function send() {
         if (objects[id].native.len > 1) {
             var hrBuffer = writeValue(objects[id].native.type, val, objects[id].native.len);
 
-            modbusClient.writeMultipleRegisters(objects[id].native.address, hrBuffer, function (err, response) {
+            modbusClient.writeMultipleRegisters(objects[id].native.address, hrBuffer, function iombodbusWriteMultiReg(err, response) {
                 adapter.log.debug('Write successfully [' + objects[id].native.address + ']: ' + val);
-            }).fail(function (err) {
+            }).fail(function iombodbusWriteMultiReg(err) {
                 adapter.log.error('Cannot write [' + objects[id].native.address + ']: ' + JSON.stringify(err));
                 // still keep on communication
                 if (!isStop) main.reconnect(true);
@@ -332,9 +332,9 @@ function send() {
             }
             var buffer = writeValue(objects[id].native.type, val, objects[id].native.len);
 
-            modbusClient.writeSingleRegister(objects[id].native.address, buffer).then(function (response) {
+            modbusClient.writeSingleRegister(objects[id].native.address, buffer).then(function iombodbusWriteSingleReg(response) {
                 adapter.log.debug('Write successfully [' + objects[id].native.address + ': ' + val);
-            }).fail(function (err) {
+            }).fail(function iombodbusWriteSingleReg(err) {
                 adapter.log.error('Cannot write [' + objects[id].native.address + ']: ' + JSON.stringify(err));
                 // still keep on communication
                 if (!isStop) main.reconnect(true);
@@ -349,12 +349,12 @@ function send() {
 }
 
 function addToEnum(enumName, id, callback) {
-    adapter.getForeignObject(enumName, function (err, obj) {
+    adapter.getForeignObject(enumName, function iobmodbusAddEnum(err, obj) {
         if (!err && obj) {
             var pos = obj.common.members.indexOf(id);
             if (pos === -1) {
                 obj.common.members.push(id);
-                adapter.setForeignObject(obj._id, obj, function (err) {
+                adapter.setForeignObject(obj._id, obj, function iobmodbusAddEnum(err) {
                     if (callback) callback(err);
                 });
             } else {
@@ -367,12 +367,12 @@ function addToEnum(enumName, id, callback) {
 }
 
 function removeFromEnum(enumName, id, callback) {
-    adapter.getForeignObject(enumName, function (err, obj) {
+    adapter.getForeignObject(enumName, function iobmodbusRemEnum(err, obj) {
         if (!err && obj) {
             var pos = obj.common.members.indexOf(id);
             if (pos !== -1) {
                 obj.common.members.splice(pos, 1);
-                adapter.setForeignObject(obj._id, obj, function (err) {
+                adapter.setForeignObject(obj._id, obj, function iobmodbusRemEnum(err) {
                     if (callback) callback(err);
                 });
             } else {
@@ -386,7 +386,7 @@ function removeFromEnum(enumName, id, callback) {
 
 function syncEnums(enumGroup, id, newEnumName, callback) {
     if (!enums[enumGroup]) {
-        adapter.getEnum(enumGroup, function (err, _enums) {
+        adapter.getEnum(enumGroup, function iobmodbusSyncEnum(err, _enums) {
             enums[enumGroup] = _enums;
             syncEnums(enumGroup, id, newEnumName, callback);
         });
@@ -403,7 +403,7 @@ function syncEnums(enumGroup, id, newEnumName, callback) {
             enums[enumGroup][e].common.members.indexOf(id) !== -1) {
             if (enums[enumGroup][e]._id !== newEnumName) {
                 count++;
-                removeFromEnum(enums[enumGroup][e]._id, id, function () {
+                removeFromEnum(enums[enumGroup][e]._id, id, function iobmodbusGroupEnum() {
                     if (!--count && typeof callback === 'function') callback();
                 });
             } else {
@@ -413,7 +413,7 @@ function syncEnums(enumGroup, id, newEnumName, callback) {
     }
     if (!found && newEnumName) {
         count++;
-        addToEnum(newEnumName, id, function () {
+        addToEnum(newEnumName, id, function iobmodbusNewEnum() {
             if (!--count&& typeof callback === 'function') callback();
         });
     }
@@ -790,7 +790,7 @@ function address2alias(id, address, isDirect) {
 }
 
 function createExtendObject(id, objData, callback) {
-    adapter.getObject(id, function (err, oldObj) {
+    adapter.getObject(id, function iobmodbusExtendObj(err, oldObj) {
         if (!err && oldObj) {
             adapter.extendObject(id, objData, callback);
         } else {
@@ -806,15 +806,15 @@ function processTasks(tasks, callback) {
     }
     var task = tasks.shift();
     if (task.name === 'add') {
-        createExtendObject(task.id, task.obj, function () {
+        createExtendObject(task.id, task.obj, function iobmodbusProcessTask1() {
             setTimeout(processTasks, 0, tasks, callback);
         });
     } else if (task.name === 'del') {
-        adapter.delObject(task.id, function () {
+        adapter.delObject(task.id, function iobmodbusProcessTask2() {
             setTimeout(processTasks, 0, tasks, callback);
         });
     } else if (task.name === 'syncEnums') {
-        syncEnums('rooms', task.id, task.obj, function () {
+        syncEnums('rooms', task.id, task.obj, function iobmodbusProcessTask3() {
             setTimeout(processTasks, 0, tasks, callback);
         });
     } else {
@@ -854,7 +854,7 @@ var main = {
     unit:                   '',
     errorCount:             0,
 
-    main: function () {
+    main: function iobmodbusMain() {
         main.ac                    = adapter.config;
         main.acp                   = adapter.config.params;
         main.acp.poll              = parseInt(main.acp.poll,  10) || 1000; // default is 1 second
@@ -874,7 +874,7 @@ var main = {
         main.acp.pulsetime         = parseInt(main.acp.pulsetime || 1000);
         main.acp.round             = Math.pow(10, main.acp.round);
 
-        adapter.getForeignObjects(adapter.namespace + '.*', function (err, list) {
+        adapter.getForeignObjects(adapter.namespace + '.*', function iobmodbusForeignObj(err, list) {
 
             main.oldObjects = list;
 
@@ -998,7 +998,7 @@ var main = {
                     }
                     // try to detect next block
                     if ((address - lastAddress > 10 && main.ac.inputRegs[i].len < 10) || (lastAddress - blockStart >= main.acp.maxBlock)) {
-                        if (main.inputRegsBlocks.map(function (obj) {
+                        if (main.inputRegsBlocks.map(function iobmodbusRegBlocks1(obj) {
                                 return obj.start;
                             }).indexOf(blockStart) === -1) {
                             main.inputRegsBlocks.push({start: blockStart, count: lastAddress - blockStart, startIndex: startIndex, endIndex: i});
@@ -1008,7 +1008,7 @@ var main = {
                     }
                     lastAddress = address + main.ac.inputRegs[i].len;
                 }
-                if (main.inputRegsBlocks.map(function (obj) {
+                if (main.inputRegsBlocks.map(function iobmodbusRegBlocks2(obj) {
                         return obj.start;
                     }).indexOf(blockStart) === -1) {
                     main.inputRegsBlocks.push({start: blockStart, count: lastAddress - blockStart, startIndex: startIndex, endIndex: i});
@@ -1077,7 +1077,7 @@ var main = {
                     }
                     // try to detect next block
                     if ((address - lastAddress > 10 && main.ac.holdingRegs[i].len < 10) || (lastAddress - blockStart >= main.acp.maxBlock)) {
-                        if (main.holdingRegsBlocks.map(function (obj) {
+                        if (main.holdingRegsBlocks.map(function iobmodbusHoldingRegBlocks1(obj) {
                                 return obj.start;
                             }).indexOf(blockStart) === -1) {
                             main.holdingRegsBlocks.push({start: blockStart, count: lastAddress - blockStart, startIndex: startIndex, endIndex: i});
@@ -1087,7 +1087,7 @@ var main = {
                     }
                     lastAddress = address + main.ac.holdingRegs[i].len;
                 }
-                if (main.holdingRegsBlocks.map(function (obj) {
+                if (main.holdingRegsBlocks.map(function iobmodbusHoldingRegBlocks2(obj) {
                         return obj.start;
                     }).indexOf(blockStart) === -1) {
                     main.holdingRegsBlocks.push({start: blockStart, count: lastAddress - blockStart, startIndex: startIndex, endIndex: i});
@@ -1330,7 +1330,7 @@ var main = {
                 }
             } else {
                 // read all states
-                adapter.getStates('*', function (err, states) {
+                adapter.getStates('*', function iobmodbusGetStates(err, states) {
                     var id;
                     // build ready arrays
                     for (i = 0; main.ac.disInputs.length > i; i++) {
@@ -1339,7 +1339,7 @@ var main = {
                             prepareWrite(id, states[id]);
                             //main.disInputs[main.ac.disInputs[i].address - main.disInputsLowAddress] = states[id].val;
                         } else {
-                            adapter.setState(id, 0, true, function (err) {
+                            adapter.setState(id, 0, true, function iobmodbusSetStates1(err) {
                                 // analyse if the state could be set (because of permissions)
                                 if (err) adapter.log.error('Can not set state ' + id + ': ' + err);
                             });
@@ -1362,7 +1362,7 @@ var main = {
                             prepareWrite(id, states[id]);
                             //main.coils[main.ac.coils[i].address - main.coilsLowAddress] = states[id].val;
                         } else {
-                            adapter.setState(id, 0, true, function (err) {
+                            adapter.setState(id, 0, true, function iobmodbusSetStates2(err) {
                                 // analyse if the state could be set (because of permissions)
                                 if (err) adapter.log.error('Can not set state ' + id + ': ' + err);
                             });
@@ -1385,7 +1385,7 @@ var main = {
                             //main.inputRegs[main.ac.inputRegs[i].address - main.inputRegsLowAddress] = states[id].val;
                             prepareWrite(id, states[id]);
                         } else {
-                            adapter.setState(id, 0, true, function (err) {
+                            adapter.setState(id, 0, true, function iobmodbusSetStates3(err) {
                                 // analyse if the state could be set (because of permissions)
                                 if (err) adapter.log.error('Can not set state ' + id + ': ' + err);
                             });
@@ -1408,7 +1408,7 @@ var main = {
                             prepareWrite(id, states[id]);
                             //main.holdingRegs[main.ac.holdingRegs[i].address - main.holdingRegsLowAddress] = states[id].val;
                         } else {
-                            adapter.setState(id, 0, true, function (err) {
+                            adapter.setState(id, 0, true, function iobmodbusSetStates4(err) {
                                 // analyse if the state could be set (because of permissions)
                                 if (err) adapter.log.error('Can not set state ' + id + ': ' + err);
                             });
@@ -1460,7 +1460,7 @@ var main = {
                 main.newObjects.push(adapter.namespace + '.info.pollTime');
             }
 
-            adapter.getObject('info.connection', function (err, obj) {
+            adapter.getObject('info.connection', function iobmodbusGetObj(err, obj) {
                 if (!obj) {
                     obj = {
                         type: 'state',
@@ -1500,7 +1500,7 @@ var main = {
                     });
                 }
             }
-            processTasks(tasks, function () {
+            processTasks(tasks, function iobmodbusProcessObj() {
                 main.oldObjects = [];
                 main.newObjects = [];
                 adapter.subscribeStates('*');
@@ -1509,7 +1509,7 @@ var main = {
         });
     },
 
-    getListOfClients: function (clients) {
+    getListOfClients: function iobmodbusGetListClients(clients) {
         var list = [];
         for (var c = 0; c < clients.length; c++) {
             var address = clients[c].address().address;
@@ -1518,7 +1518,7 @@ var main = {
         return list.join(',');
     },
 
-    reconnect: function (isImmediately) {
+    reconnect: function iobmodbusReconncet(isImmediately) {
         if (main.requestTimer) {
             clearTimeout(main.requestTimer);
             main.requestTimer = null;
@@ -1535,13 +1535,13 @@ var main = {
             adapter.setState('info.connection', main.acp.slave ? 0 : false, true);
         }
         if (!connectTimer) {
-            connectTimer = setTimeout(function () {
+            connectTimer = setTimeout(function iobmodbusConnectTimer() {
                 connectTimer = null;
                 modbusClient.connect();
             }, isImmediately ? 1000 : main.acp.recon);
         }
     },
-    start: function () {
+    start: function iobmodbusStart() {
         main.acp.type = main.acp.type || 'tcp';
         var fs;
         var path;
@@ -1593,7 +1593,7 @@ var main = {
             }).compose(server.tcp.complete)
             .init(function () {
                 var that = this;
-                this.on('readCoilsRequest', function (start, quantity) {
+                this.on('readCoilsRequest', function iobmodbusReadCoils(start, quantity) {
                     if (main.coilsChanged) {
                         main.coilsChanged = null;
                         var resp = new Array(Math.ceil(quantity / 16) * 2);
@@ -1618,7 +1618,7 @@ var main = {
                     }
                 });
 
-                this.on('readDiscreteInputsRequest', function (start, quantity) {
+                this.on('readDiscreteInputsRequest', function iobmodbusReadDiscrete(start, quantity) {
                     if (main.disInputsChanged) {
                         main.disInputsChanged = false;
                         var resp = new Array(Math.ceil(quantity / 16) * 2);
@@ -1643,7 +1643,7 @@ var main = {
                     }
                 });
 
-                this.on('readInputRegistersRequest', function (start, quantity) {
+                this.on('readInputRegistersRequest', function iobmodbusReadInputReg(start, quantity) {
                     if (main.inputRegsChanged) {
                         main.inputRegsChanged = false;
                         var data = this.getInput();
@@ -1661,7 +1661,7 @@ var main = {
                     }
                 });
 
-                this.on('readHoldingRegistersRequest', function (start, quantity) {
+                this.on('readHoldingRegistersRequest', function iobmodbusReadHoldingReg(start, quantity) {
                     if (main.holdingRegsChanged) {
                         main.holdingRegsChanged = false;
                         var data = this.getHolding();
@@ -1679,11 +1679,11 @@ var main = {
                     }
                 });
 
-                this.on('postWriteSingleCoilRequest', function (start, value) {
+                this.on('postWriteSingleCoilRequest', function iobmodbusReadSingleCoil(start, value) {
                     var a = start - main.coilsLowAddress;
 
                     if (a >= 0 && main.coilsMapping[a]) {
-                        adapter.setState(main.coilsMapping[a], value, true, function (err) {
+                        adapter.setState(main.coilsMapping[a], value, true, function iobmodbusReadSingleCoil(err) {
                             // analyse if the state could be set (because of permissions)
                             if (err) adapter.log.error('Can not set state: ' + err);
                         });
@@ -1701,7 +1701,7 @@ var main = {
                     0x80
                 ];
 
-                this.on('postWriteMultipleCoilsRequest', function (start, length, byteLength) {
+                this.on('postWriteMultipleCoilsRequest', function iobmodbusPostMultiCoil(start, length, byteLength) {
                     var i = 0;
                     var data = this.getCoils();
                     if (start < main.coilsLowAddress) start = main.coilsLowAddress;
@@ -1711,7 +1711,7 @@ var main = {
                         if (a >= 0 && main.coilsMapping[a]) {
                             var value = data.readUInt8((i + start) >> 3);
                             value = value & mPow2[(i + start) % 8];
-                            adapter.setState(main.coilsMapping[a], value ? true : false, true, function (err) {
+                            adapter.setState(main.coilsMapping[a], value ? true : false, true, function iobmodbusPostMultiCoil(err) {
                                 // analyse if the state could be set (because of permissions)
                                 if (err) adapter.log.error('Can not set state: ' + err);
                             });
@@ -1721,7 +1721,7 @@ var main = {
                     }
                 });
 
-                this.on('postWriteSingleRegisterRequest', function (start, value) {
+                this.on('postWriteSingleRegisterRequest', function iobmodbusPostSingleReg(start, value) {
                     start = start >> 1;
                     var a = start - main.holdingRegsLowAddress;
 
@@ -1736,7 +1736,7 @@ var main = {
                             val = Math.round(val * main.acp.round) / main.acp.round;
                         }
 
-                        adapter.setState(main.holdingRegsMapping[a], val, true, function (err) {
+                        adapter.setState(main.holdingRegsMapping[a], val, true, function iobmodbusPostSingleReg(err) {
                             // analyse if the state could be set (because of permissions)
                             if (err) adapter.log.error('Can not set state: ' + err);
                         });
@@ -1746,7 +1746,7 @@ var main = {
                     }
                 });
 
-                this.on('postWriteMultipleRegistersRequest', function (start, length, byteLength) {
+                this.on('postWriteMultipleRegistersRequest', function iobmodbusPostMultiReg(start, length, byteLength) {
                     var data = this.getHolding();
                     var i = 0;
                     start = start >> 1;
@@ -1763,7 +1763,7 @@ var main = {
                                 val = val * native.factor + native.offset;
                                 val = Math.round(val * main.acp.round) / main.acp.round;
                             }
-                            adapter.setState(main.holdingRegsMapping[a], val, true, function (err) {
+                            adapter.setState(main.holdingRegsMapping[a], val, true, function iobmodbusPostMultiReg(err) {
                                 // analyse if the state could be set (because of permissions)
                                 if (err) adapter.log.error('Can not set state: ' + err);
                             });
@@ -1777,15 +1777,15 @@ var main = {
                     }
                 });
 
-                this.on('connection', function (client) {
+                this.on('connection', function iobmodbusOnConnection(client) {
                     var list = main.getListOfClients(that.getClients());
                     adapter.log.info('+ Clients connected: ' + list);
                     adapter.setState('info.connection', list, true);
-                }).on('close', function (client) {
+                }).on('close', function iobmodbusOnClose(client) {
                     var list = main.getListOfClients(that.getClients());
                     adapter.log.info('- Client connected: ' + list);
                     adapter.setState('info.connection', list, true);
-                }).on('error', function (err) {
+                }).on('error', function iobmodbusOnError(err) {
                     var list = main.getListOfClients(that.getClients());
                     adapter.log.info('- Clients connected: ' + list);
                     adapter.setState('info.connection', list, true);
@@ -1968,60 +1968,60 @@ var main = {
         }
     },
 
-    pollDisInputs:         function (callback) {
+    pollDisInputs:         function iobmodbusPollDisInputs(callback) {
         if (main.disInputsLength) {
-            modbusClient.readDiscreteInputs(main.disInputsLowAddress, main.disInputsLength).then(function (registers) {
+            modbusClient.readDiscreteInputs(main.disInputsLowAddress, main.disInputsLength).then(function iobmodbusPollDisInputsRegs1(registers) {
                 for (var n = 0; main.disInputs.length > n; n++) {
                     var id = main.disInputs[n].id;
                     var val = registers.coils[main.disInputs[n].address - main.disInputsLowAddress];
 
                     if (ackObjects[id] === undefined || ackObjects[id].val !== val) {
                         ackObjects[id] = {val: val};
-                        adapter.setState(id, !!val, true, function (err) {
+                        adapter.setState(id, !!val, true, function iobmodbusPollDisInputsRegs2(err) {
                             // analyse if the state could be set (because of permissions)
                             if (err) adapter.log.error('Can not set state ' + id + ': ' + err);
                         });
                     }
                 }
                 callback();
-            }).fail(function (err) {
+            }).fail(function iobmodbusPollDisInputsRegs3(err) {
                 callback(err);
             });
         } else {
             callback();
         }
     },
-    pollCoils:             function (callback) {
+    pollCoils:             function iobmodbusPollCoils(callback) {
         if (main.coilsLength) {
-            modbusClient.readCoils(main.coilsLowAddress, main.coilsLength).then(function (registers) {
+            modbusClient.readCoils(main.coilsLowAddress, main.coilsLength).then(function iobmodbusPollCoilsReg1(registers) {
                 for (var n = 0; main.coils.length > n; n++) {
                     var id = main.coils[n].id;
                     var val = registers.coils[main.coils[n].address - main.coilsLowAddress];
 
                     if (ackObjects[id] === undefined || ackObjects[id].val !== val) {
                         ackObjects[id] = {val: val};
-                        adapter.setState(id, !!val, true, function (err) {
+                        adapter.setState(id, !!val, true, function iobmodbusPollCoilsReg2(err) {
                             // analyse if the state could be set (because of permissions)
                             if (err) adapter.log.error('Can not set state ' + id + ': ' + err);
                         });
                     }
                 }
                 callback();
-            }).fail(function (err) {
+            }).fail(function iobmodbusPollCoilsReg3(err) {
                 callback(err);
             });
         } else {
             callback();
         }
     },
-    pollInputRegsBlock:    function (block, callback) {
+    pollInputRegsBlock:    function iobmodbusPollInputRegsBlock(block, callback) {
         if (block >= main.inputRegsBlocks.length) return callback();
 
         if (main.inputRegsBlocks[block].startIndex === main.inputRegsBlocks[block].endIndex) {
             main.inputRegsBlocks[block].endIndex++;
         }
 
-        modbusClient.readInputRegisters(main.inputRegsBlocks[block].start, main.inputRegsBlocks[block].count).then(function (buffer) {
+        modbusClient.readInputRegisters(main.inputRegsBlocks[block].start, main.inputRegsBlocks[block].count).then(function iobmodbusPollInputRegsBlockBuffer1(buffer) {
             if (buffer.payload && buffer.payload.length) {
                 for (var n = main.inputRegsBlocks[block].startIndex; n < main.inputRegsBlocks[block].endIndex; n++) {
                     var id = main.inputRegs[n].id;
@@ -2032,7 +2032,7 @@ var main = {
                     }
                     if (ackObjects[id] === undefined || ackObjects[id].val !== val) {
                         ackObjects[id] = {val: val};
-                        adapter.setState(id, val, true, function (err) {
+                        adapter.setState(id, val, true, function iobmodbusPollInputRegsBlockBuffer2(err) {
                             // analyse if the state could be set (because of permissions)
                             if (err) adapter.log.error('Can not set state ' + id + ': ' + err);
                         });
@@ -2041,30 +2041,30 @@ var main = {
             } else {
                 adapter.log.warn('Null buffer length READ_INPUT_REGISTERS for register ' + main.inputRegsBlocks[block].start);
             }
-            setTimeout(function () {
+            setTimeout(function iobmodbusPollInputRegsBlockTO1() {
                 main.pollInputRegsBlock(block + 1, callback);
             }, 0);
-        }).fail(function (err) {
+        }).fail(function iobmodbusPollInputRegsBlockBuffer3(err) {
             callback(err);
         });
     },
-    pollInputRegsBlocks:   function (callback) {
+    pollInputRegsBlocks:   function iobmodbusPollInputRegsBlocks(callback) {
         if (main.inputRegsLength) {
-            main.pollInputRegsBlock(0, function (err) {
+            main.pollInputRegsBlock(0, function iobmodbusPollInputRegsBlocks(err) {
                 callback(err);
             });
         } else {
             callback();
         }
     },
-    pollHoldingRegsBlock:  function (block, callback) {
+    pollHoldingRegsBlock:  function iobmodbusPollHoldingRegsBlock(block, callback) {
         if (block >= main.holdingRegsBlocks.length) return callback();
 
         if (main.holdingRegsBlocks[block].startIndex === main.holdingRegsBlocks[block].endIndex) {
             main.holdingRegsBlocks[block].endIndex++;
         }
 
-        modbusClient.readHoldingRegisters(main.holdingRegsBlocks[block].start, main.holdingRegsBlocks[block].count).then(function (buffer) {
+        modbusClient.readHoldingRegisters(main.holdingRegsBlocks[block].start, main.holdingRegsBlocks[block].count).then(function iobmodbusPollHoldingRegsBlockBuffer1(buffer) {
             if (buffer.payload && buffer.payload.length) {
                 for (var n = main.holdingRegsBlocks[block].startIndex; n < main.holdingRegsBlocks[block].endIndex; n++) {
                     var id = main.holdingRegs[n].id;
@@ -2076,7 +2076,7 @@ var main = {
 
                     if (ackObjects[id] === undefined || ackObjects[id].val !== val) {
                         ackObjects[id] = {val: val};
-                        adapter.setState(id, val, true, function (err) {
+                        adapter.setState(id, val, true, function iobmodbusPollHoldingRegsBlockBuffer2(err) {
                             // analyse if the state could be set (because of permissions)
                             if (err) adapter.log.error('Can not set state ' + id + ': ' + err);
                         });
@@ -2088,21 +2088,21 @@ var main = {
             // special case
             if (main.acp.maxBlock < 2 && main.holdingRegs[main.holdingRegsBlocks[block].startIndex].cw) {
                 // write immediately the current value
-                main.writeCyclicHoldingReg(objects[main.holdingRegs[main.holdingRegsBlocks[block].startIndex].fullId], function () {
+                main.writeCyclicHoldingReg(objects[main.holdingRegs[main.holdingRegsBlocks[block].startIndex].fullId], function iobmodbusPollHoldingRegsBlockBuffer3() {
                     main.pollHoldingRegsBlock(block + 1, callback);
                 });
             } else {
-                setTimeout(function () {
+                setTimeout(function iobmodbusPollHoldingRegsBlockBuffer4() {
                     main.pollHoldingRegsBlock(block + 1, callback);
                 }, 0);
             }
-        }).fail(function (err) {
+        }).fail(function iobmodbusPollHoldingRegsBlockBuffer5(err) {
             callback(err);
         });
     },
-    pollHoldingRegsBlocks: function (callback) {
+    pollHoldingRegsBlocks: function iobmodbusPollHoldingRegsBlocks(callback) {
         if (main.holdingRegsLength) {
-            main.pollHoldingRegsBlock(0, function (err) {
+            main.pollHoldingRegsBlock(0, function iobmodbusPollHoldingRegsBlocks(err) {
                 if (main.holdingRegsCyclicWrite.length && main.acp.maxBlock >= 2) {
                     main.writeCyclicHoldingRegs(0, callback);
                 } else {
@@ -2114,15 +2114,15 @@ var main = {
         }
     },
 
-    writeCyclicHoldingReg: function (obj, callback) {
+    writeCyclicHoldingReg: function iobmodbusWriteCyclicHoldingReg(obj, callback) {
         if (obj.native.len > 1) {
             var buffer = new Buffer(obj.native.len * 2);
             for (var b = 0; b < buffer.length; b++) {
                 buffer[b] = main.holdingRegs[(obj.native.address - main.holdingRegsLowAddress) * 2 + b];
             }
-            modbusClient.writeMultipleRegisters(obj.native.address, buffer).then(function (response) {
+            modbusClient.writeMultipleRegisters(obj.native.address, buffer).then(function iobmodbusWriteCyclicHoldingRegResp(response) {
                 callback();
-            }).fail(function (err) {
+            }).fail(function iobmodbusWriteCyclicHoldingReg(err) {
                 adapter.log.error('Cannot write: ' + JSON.stringify(err));
                 callback(err);
             });
@@ -2130,17 +2130,17 @@ var main = {
             callback();
         }
     },
-    writeCyclicHoldingRegs: function (i, callback) {
+    writeCyclicHoldingRegs: function iobmodbusWriteCyclicHoldingRegs1(i, callback) {
         if (i >= main.holdingRegsCyclicWrite.length) return callback();
 
         var id = main.holdingRegsCyclicWrite[i];
 
-        main.writeCyclicHoldingReg(objects[id], function () {
+        main.writeCyclicHoldingReg(objects[id], function iobmodbusWriteCyclicHoldingRegs2() {
             main.writeCyclicHoldingRegs(i + 1, callback);
         });
     },
 
-    pollResult: function (startTime, err) {
+    pollResult: function iobmodbusPollResult(startTime, err) {
         if (err) {
             main.errorCount++;
 
@@ -2172,19 +2172,19 @@ var main = {
         }
     },
 
-    poll: function () {
+    poll: function iobmodbusPoll() {
         var startTime = (new Date()).valueOf();
-        main.requestTimer = setTimeout(function () {
+        main.requestTimer = setTimeout(function iobmodbusPollTO() {
             main.pollResult(startTime, 'App Timeout');
         }, main.acp.timeout + 200);
 
-        main.pollDisInputs(function (err) {
+        main.pollDisInputs(function iobmodbusPollErr1(err) {
             if (err) return main.pollResult(startTime, err);
-            main.pollCoils(function (err) {
+            main.pollCoils(function iobmodbusPollErr2(err) {
                 if (err) return main.pollResult(startTime, err);
-                main.pollInputRegsBlocks(function (err) {
+                main.pollInputRegsBlocks(function iobmodbusPollErr3(err) {
                     if (err) return main.pollResult(startTime, err);
-                    main.pollHoldingRegsBlocks(function (err) {
+                    main.pollHoldingRegsBlocks(function iobmodbusPollErr4(err) {
                         clearTimeout(main.requestTimer);
                         main.requestTimer = null;
                         main.pollResult(startTime, err);
